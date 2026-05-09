@@ -688,17 +688,21 @@ let srPhotoData = '';
 let payState = { camp: '', seg: '' };
 
 // ======================================================
-// API
+// API — compatible con Google Apps Script (GET + payload)
 // ======================================================
 async function api(action, data = {}) {
   try {
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action, ...data })
-    });
-    return await res.json();
+    const payload = JSON.stringify({ action, ...data });
+    const url = API_URL + '?payload=' + encodeURIComponent(payload);
+    const res = await fetch(url, { method: 'GET', redirect: 'follow' });
+    const text = await res.text();
+    if (text.trim().startsWith('<')) {
+      console.error('Apps Script devolvio HTML:', text.slice(0, 300));
+      return { ok: false, error: 'Error del servidor. Verifica que el script este publicado para "Cualquier usuario".' };
+    }
+    return JSON.parse(text);
   } catch(e) {
-    return { ok: false, error: 'Error de conexión: ' + e.message };
+    return { ok: false, error: 'Error de conexion: ' + e.message };
   }
 }
 
